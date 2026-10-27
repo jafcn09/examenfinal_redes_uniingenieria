@@ -8,7 +8,7 @@ Clasificación de 10 condiciones de rodamiento a partir de señales de vibració
 
 ## Integrantes
 
-Curso **Redes Neuronales (MIA-201)** · Maestría en Inteligencia Artificial · Universidad Nacional de Ingeniería (UNI) · **Grupo 6**
+Curso **Redes Neuronales (MIA-207)** · Maestría en Inteligencia Artificial · Universidad Nacional de Ingeniería (UNI) · **Grupo 6**
 
 | # | Integrante |
 |---|---|
