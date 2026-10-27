@@ -78,7 +78,8 @@ def attention_rollout(ast_model, x) -> np.ndarray:
 
 
 def mel_patch_labels(cfg: CFG, f_p: int) -> list:
-    mel_hz = torchaudio.functional.melscale_fbanks(257, 20.0, cfg.fs / 2, 128, cfg.fs).argmax(0).numpy() * cfg.fs / 512
+    fs = cfg.ast_fs or cfg.fs  # frecuencia a la que el AST calcula su espectrograma mel
+    mel_hz = torchaudio.functional.melscale_fbanks(257, 20.0, fs / 2, 128, fs).argmax(0).numpy() * fs / 512
     return [f"{mel_hz[min(127, k * 10 + 8)]:.0f} Hz" for k in range(f_p)]
 
 

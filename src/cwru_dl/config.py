@@ -49,6 +49,7 @@ class CFG:
     lr_ast: float = 3e-5
     ast_name: str = "MIT/ast-finetuned-audioset-10-10-0.4593"
     ast_frames: int = 96
+    ast_fs: int = 16000   # el AST se preentrenó con audio a 16 kHz; 0 = sin remuestreo
     diff_epochs: int = 60
     diff_batch: int = 64
     diff_T: int = 1000

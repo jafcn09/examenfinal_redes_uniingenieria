@@ -297,6 +297,7 @@ Enlace a los pesos entrenados: _completar (Drive o Hugging Face)_.
 ## Decisiones de diseño verificadas
 
 - Partición train/val temporal dentro de cada señal (sin ventanas compartidas) y test en una carga nunca vista: sin fuga de datos.
+- La señal se remuestrea de 12 kHz a 16 kHz solo para el AST (`ast_fs: 16000`), la frecuencia con la que fue preentrenado en AudioSet, para que cada banda mel corresponda a las mismas frecuencias en Hz que vio en el preentrenamiento. Se conserva una ventana de 25 ms y un salto de 2 ms (≈86 frames por ventana de 2048 muestras); las bandas por encima de 6 kHz (Nyquist de la señal original) quedan sin energía. Las CNN siguen trabajando a 12 kHz. Con `ast_fs: 0` se desactiva el remuestreo.
 - El AST conserva sus embeddings posicionales preentrenados mediante interpolación bilineal de 12×101 a 12×9 parches en lugar de reinicializarlos.
 - El DDPM usa EMA con calentamiento (`decay = min(0.999, (1+s)/(10+s))`): sin él, con pocos pasos las muestras degeneran en ruido blanco.
 - La periodicidad del Grad-CAM se mide en la segunda etapa convolucional (375 Hz de muestreo temporal) para poder resolver BPFO ≈ 103 Hz y BPFI ≈ 156 Hz a 1730 rpm.

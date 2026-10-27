@@ -3,3 +3,4 @@ epochs_ast: 8
 lr_ast: 0.00003
 ast_name: MIT/ast-finetuned-audioset-10-10-0.4593
 ast_frames: 96
+ast_fs: 16000   # remuestreo de 12 kHz a 16 kHz (frecuencia de preentrenamiento en AudioSet)

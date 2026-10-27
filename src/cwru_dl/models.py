@@ -71,7 +71,13 @@ class ASTClassifier(nn.Module):
         super().__init__()
         from transformers import ASTForAudioClassification, ASTConfig
         self.frames = cfg.ast_frames
-        self.mel = torchaudio.transforms.MelSpectrogram(sample_rate=cfg.fs, n_fft=512, win_length=300, hop_length=24, n_mels=128, f_min=20.0, power=2.0)
+        # Remuestreo a la frecuencia de preentrenamiento del AST (AudioSet, 16 kHz) para que cada banda mel
+        # corresponda a las mismas frecuencias en Hz que vio el modelo. Ventana de 25 ms y salto de 2 ms en
+        # ambos casos, de modo que una ventana de 2048 muestras a 12 kHz sigue dando ~86 frames.
+        self.ast_fs = cfg.ast_fs or cfg.fs
+        self.resample = torchaudio.transforms.Resample(cfg.fs, self.ast_fs) if self.ast_fs != cfg.fs else nn.Identity()
+        self.mel = torchaudio.transforms.MelSpectrogram(sample_rate=self.ast_fs, n_fft=512, win_length=round(0.025 * self.ast_fs),
+                                                        hop_length=round(0.002 * self.ast_fs), n_mels=128, f_min=20.0, power=2.0)
         if pretrained:
             self.ast = ASTForAudioClassification.from_pretrained(cfg.ast_name, num_labels=n_cls, ignore_mismatched_sizes=True, attn_implementation="eager")
         else:
@@ -93,7 +99,7 @@ class ASTClassifier(nn.Module):
         self.grid = (f_p, new_t)
 
     def frontend(self, x):
-        m = torch.log(self.mel(x) + 1e-6)
+        m = torch.log(self.mel(self.resample(x)) + 1e-6)
         m = m[:, :, :self.frames] if m.shape[-1] >= self.frames else F.pad(m, (0, self.frames - m.shape[-1]))
         m = (m - m.mean(dim=(1, 2), keepdim=True)) / (2 * m.std(dim=(1, 2), keepdim=True) + 1e-6)
         if self.training and self.specaug:
