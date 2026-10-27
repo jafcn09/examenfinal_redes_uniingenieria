@@ -321,15 +321,4 @@ Los datos de vibración pertenecen al Case Western Reserve University Bearing Da
 - Case Western Reserve University Bearing Data Center: https://engineering.case.edu/bearingdatacenter
 - Espejo público de los `.mat`: https://github.com/s-whynot/CWRU-dataset
 
-## Cómo citar
 
-```bibtex
-@misc{grupo6_cwru_diffusion_2026,
-  title        = {Diagnóstico de fallas en rodamientos (CWRU) con aumento por difusión condicional},
-  author       = {Coaguila Berrios, Hipólito and Herrera Padilla, Lenin and Cánepa Maceda, Jhafet},
-  year         = {2026},
-  howpublished = {Curso Redes Neuronales (MIA-201), Maestría en Inteligencia Artificial,
-                  Universidad Nacional de Ingeniería. Grupo 6},
-  note         = {https://github.com/jafcn09/examenfinal_redes_uniingenieria}
-}
-```
