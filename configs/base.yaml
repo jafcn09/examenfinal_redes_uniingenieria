@@ -1,0 +1,14 @@
+# Configuración común a todos los experimentos (se superpone con configs/<experimento>.yaml)
+root: data/CWRU
+out: results
+fs: 12000
+win: 2048
+train_stride: 512
+eval_stride: 2048
+train_loads: [0, 1, 2]
+test_loads: [3]
+val_frac: 0.2
+imbalance: {"007": 0.3, "014": 0.1, "021": 0.03}
+seeds: [0, 1, 2]
+batch: 64
+snr_eval: [10, 0]

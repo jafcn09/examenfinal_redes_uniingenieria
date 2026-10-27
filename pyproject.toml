@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cwru_dl"
+version = "1.0.0"
+description = "Diagnóstico de fallas en rodamientos (CWRU) con aumento por difusión condicional"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["cwru", "rodamientos", "diagnostico-de-fallas", "difusion", "ddpm", "vibracion"]
+authors = [
+    { name = "Hipólito Coaguila Berrios" },
+    { name = "Lenin Herrera Padilla" },
+    { name = "Jhafet Cánepa Maceda" },
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,13 @@
+# Experimento completo del artículo: 3 modelos x 3 aumentos x 3 semillas + DDPM
+epochs_cnn: 30
+epochs_ast: 8
+lr_cnn: 0.001
+lr_ast: 0.00003
+ast_name: MIT/ast-finetuned-audioset-10-10-0.4593
+ast_frames: 96
+diff_epochs: 60
+diff_batch: 64
+diff_T: 1000
+ddim_steps: 50
+cfg_w: 2.0
+syn_cap: 0
