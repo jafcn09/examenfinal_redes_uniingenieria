@@ -60,7 +60,7 @@ Puntos clave del diseño, verificados en el código:
 
 ```bash
 git clone  https://github.com/jafcn09/examenfinal_redes_uniingenieria
-cd cwru-bearing-diffusion
+cd examenfinal_redes_uniingenieria
 python -m venv .venv && source .venv/bin/activate     # opcional
 pip install -r requirements.txt
 pip install -e .            # o: export PYTHONPATH=src
@@ -268,7 +268,7 @@ Referencia obtenida en validación en CPU (perfil `fast`, 1 semilla, 10 épocas,
 ## Estructura del repositorio
 
 ```
-cwru-bearing-diffusion/
+examenfinal_redes_uniingenieria/
 ├── README.md                 # este archivo
 ├── LICENSE                   # MIT (código); los datos conservan los términos de CWRU
 ├── requirements.txt           # dependencias con versiones mínimas

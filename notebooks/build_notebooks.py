@@ -5,9 +5,9 @@ def md(s): C.append(("md", s.strip("\n")))
 def code(s): C.append(("code", s.strip("\n")))
 
 md(r"""
-# MIA-201 Examen Final: Diagnóstico de fallas en rodamientos (CWRU) con aumento por difusión condicional
+# MIA-203 Examen Final: Diagnóstico de fallas en rodamientos (CWRU) con aumento por difusión condicional
 
-**Universidad Nacional de Ingeniería · Maestría en Inteligencia Artificial** · Redes Neuronales (MIA-201) · Grupo 6
+**Universidad Nacional de Ingeniería · Maestría en Inteligencia Artificial** · Redes Neuronales y Aprendizaje Profundo (MIA-203) · Grupo 6
 **Equipo (Grupo 6):** Hipólito Coaguila Berrios · Lenin Herrera Padilla · Jhafet Cánepa Maceda
 
 Este notebook es el orquestador reproducible del proyecto: todo el código vive en el paquete `src/cwru_dl` del repositorio y aquí solo se invoca, se muestran tablas y figuras, y se documenta qué se verificó en cada etapa.
@@ -41,12 +41,12 @@ code(r"""
 import os, sys, subprocess
 from pathlib import Path
 
-REPO_URL = "https://github.com/<usuario>/cwru-bearing-diffusion.git"
+REPO_URL = "https://github.com/jafcn09/examenfinal_redes_uniingenieria.git"
 if not Path("src/cwru_dl").exists():
     if Path("../src/cwru_dl").exists():
         os.chdir("..")
     else:
-        subprocess.run(["git", "clone", "-q", REPO_URL, "cwru-bearing-diffusion"], check=True); os.chdir("cwru-bearing-diffusion")
+        subprocess.run(["git", "clone", "-q", REPO_URL, "examenfinal_redes_uniingenieria"], check=True); os.chdir("examenfinal_redes_uniingenieria")
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"], check=True)
 sys.path.insert(0, "src")
 PROFILE = os.environ.get("CWRU_PROFILE")
@@ -243,13 +243,13 @@ Carga los pesos entrenados (enlace del README) y clasifica ventanas de un archiv
 code2(r"""
 import os, sys, subprocess
 from pathlib import Path
-REPO_URL = "https://github.com/<usuario>/cwru-bearing-diffusion.git"
+REPO_URL = "https://github.com/jafcn09/examenfinal_redes_uniingenieria.git"
 WEIGHTS_URL = "<enlace a CNN1D_diffusion_s0.pt en Drive o Hugging Face>"
 if not Path("src/cwru_dl").exists():
     if Path("../src/cwru_dl").exists():
         os.chdir("..")
     else:
-        subprocess.run(["git", "clone", "-q", REPO_URL, "cwru-bearing-diffusion"], check=True); os.chdir("cwru-bearing-diffusion")
+        subprocess.run(["git", "clone", "-q", REPO_URL, "examenfinal_redes_uniingenieria"], check=True); os.chdir("examenfinal_redes_uniingenieria")
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", "requirements.txt"], check=True)
 sys.path.insert(0, "src")
 """)
