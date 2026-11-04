@@ -24,6 +24,9 @@ BEARING = {"BPFI": 5.4152, "BPFO": 3.5848, "BSF": 2.3568, "FTF": 0.39828}
 RPM_BY_LOAD = {0: 1797, 1: 1772, 2: 1750, 3: 1730}
 DATA_URL = "https://github.com/s-whynot/CWRU-dataset.git"
 DATA_DIRS = ["Normal", "12k_Drive_End_Bearing_Fault_Data"]
+# Frecuencia de muestreo original por clase: la línea base Normal se registró a 48 kHz (verificado: sus líneas
+# espectrales coinciden con las de los archivos de falla a 12 kHz solo si se lee a 48 kHz).
+NATIVE_FS = {"Normal": 48000}
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 HW = torch.cuda.get_device_name(0) if DEVICE.type == "cuda" else f"CPU x{os.cpu_count()}"

@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 import torch
-from scipy.signal import hilbert, welch
+from scipy.signal import hilbert, resample_poly, welch
 
-from .config import CFG, CLASSES, FOLDERS, BEARING, RPM_BY_LOAD, DATA_URL, DATA_DIRS
+from .config import CFG, CLASSES, FOLDERS, BEARING, RPM_BY_LOAD, DATA_URL, DATA_DIRS, NATIVE_FS
 
 
 def download_cwru(root: Path) -> None:
@@ -25,10 +25,22 @@ def load_signal(cfg: CFG, cls: str, load: int):
     folder = cfg.root / FOLDERS[cls]
     path = next(p for p in folder.glob(f"*_{load}.mat"))
     m = sio.loadmat(path)
-    de_key = next(k for k in m if k.endswith("DE_time"))
-    rpm_key = next((k for k in m if k.endswith("RPM")), None)
+    # Algunos .mat traen más de una señal (99_Normal_2.mat contiene también la de 98): se prefiere
+    # la variable cuyo número coincide con el del archivo y solo si no existe se toma la primera.
+    num = path.stem.split("_")[0].split("@")[0]
+    de_keys = [k for k in m if k.endswith("DE_time")]
+    own = f"X{int(num):03d}_DE_time" if num.isdigit() else None
+    de_key = own if own in de_keys else de_keys[0]
+    rpm_key = next((k for k in m if k.endswith("RPM") and (own is None or k.startswith(own[:4]))), None)
     rpm = float(m[rpm_key].squeeze()) if rpm_key else RPM_BY_LOAD[load]
-    return m[de_key].astype(np.float32).ravel(), rpm, path.name
+    x = m[de_key].astype(np.float64).ravel()
+    # La línea base Normal de CWRU está muestreada a 48 kHz y las fallas a 12 kHz: se remuestrea a cfg.fs
+    # para que todas las clases compartan escala temporal y espectral (si no, la red distingue Normal por la escala).
+    native = NATIVE_FS.get(cls, cfg.fs)
+    if native != cfg.fs:
+        g = np.gcd(native, cfg.fs)
+        x = resample_poly(x, cfg.fs // g, native // g)
+    return x.astype(np.float32), rpm, path.name
 
 
 def load_meta(cfg: CFG) -> pd.DataFrame:

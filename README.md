@@ -30,7 +30,7 @@ Se comparan tres arquitecturas (CNN 1D tipo WDCNN como línea base, CNN 2D sobre
    [1] data   ventanas de 2048 muestras, z-score por ventana
              train: cargas 0,1,2 (80 % temporal de cada señal) + desbalance inducido
              val:   cargas 0,1,2 (20 % temporal restante)
-             test:  carga 3 (nunca vista, balanceada)
+             test:  carga 3 (nunca vista, balanceada: ~59 ventanas por clase)
                          |
    [2] diffusion   DDPM condicional 1D (U-Net + FiLM, CFG w=2.0, muestreo DDIM)
                    entrenado SOLO con el train desbalanceado
@@ -297,6 +297,9 @@ Enlace a los pesos entrenados: _completar (Drive o Hugging Face)_.
 ## Decisiones de diseño verificadas
 
 - Partición train/val temporal dentro de cada señal (sin ventanas compartidas) y test en una carga nunca vista: sin fuga de datos.
+- La línea base **Normal** de CWRU está registrada a **48 kHz** (las fallas, a 12 kHz). Se verificó comparando sus líneas espectrales (159.5, 360 y 533.5 Hz) con las de los archivos de falla: solo coinciden si se lee a 48 kHz. Por eso `load_signal` la remuestrea a 12 kHz (`NATIVE_FS` en `config.py`); sin este paso la clase Normal tendría otra escala temporal y espectral y la red podría reconocerla por ese atajo en lugar de por el estado del rodamiento.
+- El archivo `99_Normal_2.mat` contiene dos señales (`X098_DE_time`, copia de la carga 1, y `X099_DE_time`). `load_signal` elige la variable cuyo número coincide con el del archivo; así la carga 2 no duplica la carga 1.
+- Limitación: en CWRU cada condición de falla corresponde a un único rodamiento ensayado en las cuatro cargas, por lo que el test en 3 HP evalúa una condición de operación nueva, no un rodamiento nuevo.
 - La señal se remuestrea de 12 kHz a 16 kHz solo para el AST (`ast_fs: 16000`), la frecuencia con la que fue preentrenado en AudioSet, para que cada banda mel corresponda a las mismas frecuencias en Hz que vio en el preentrenamiento. Se conserva una ventana de 25 ms y un salto de 2 ms (≈86 frames por ventana de 2048 muestras); las bandas por encima de 6 kHz (Nyquist de la señal original) quedan sin energía. Las CNN siguen trabajando a 12 kHz. Con `ast_fs: 0` se desactiva el remuestreo.
 - El AST conserva sus embeddings posicionales preentrenados mediante interpolación bilineal de 12×101 a 12×9 parches en lugar de reinicializarlos.
 - El DDPM usa EMA con calentamiento (`decay = min(0.999, (1+s)/(10+s))`): sin él, con pocos pasos las muestras degeneran en ruido blanco.
