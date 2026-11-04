@@ -1,0 +1,285 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands,es-tabla,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[hyphens]{url}
+\usepackage{cite}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------------------
+% Marcador de texto pendiente: se completa con los números de la corrida `full`.
+% Antes de entregar, buscar "\pend" y reemplazar cada uno (o dejar \pend vacío).
+\newcommand{\pend}[1]{\textcolor{red}{[#1]}}
+% Números generados automáticamente por paper/make_tables.py (si existen)
+\providecommand{\HW}{\pend{GPU}}\providecommand{\GPUH}{\pend{h}}
+\providecommand{\NTRAIN}{\pend{n}}\providecommand{\NSYN}{\pend{n}}
+\providecommand{\NVAL}{\pend{n}}\providecommand{\NTEST}{\pend{n}}
+\providecommand{\VTORCH}{\pend{v}}\providecommand{\VTRANSF}{\pend{v}}
+\InputIfFileExists{generated/numeros.tex}{}{}
+% Tabla o figura generada; si aún no existe, muestra un recuadro pendiente.
+\newcommand{\tablagen}[1]{\InputIfFileExists{generated/#1.tex}{}{\fbox{\pend{\detokenize{#1}: ejecutar paper/make\_tables.py}}}}
+\newcommand{\figgen}[2]{\IfFileExists{figs/#1.png}{\includegraphics[width=#2]{figs/#1.png}}{\fbox{\parbox{0.9#2}{\centering\pend{\detokenize{#1}.png pendiente}}}}}
+% ---------------------------------------------------------------------------
+
+\begin{document}
+
+\title{Diagnóstico de fallas en rodamientos con pocos datos de falla y cambio de carga: CNN, Audio Spectrogram Transformer y aumento por difusión condicional}
+
+\author{
+\IEEEauthorblockN{Hipólito Coaguila Berrios, Lenin Dixon Herrera Padilla, Jhafet Cánepa Maceda}
+\IEEEauthorblockA{Maestría en Inteligencia Artificial, Universidad Nacional de Ingeniería (UNI), Lima, Perú\\
+MIA-203 Redes Neuronales y Aprendizaje Profundo --- Grupo 6\\
+Código: \url{https://github.com/jafcn09/examenfinal_redes_uniingenieria}}
+}
+
+\maketitle
+
+\begin{abstract}
+Los rodamientos son la principal causa de falla de los motores eléctricos y su diagnóstico automático a partir de la vibración enfrenta dos limitaciones reales: hay muy pocos registros de fallas, sobre todo de las severas, y la máquina opera en condiciones distintas de las vistas al entrenar. Estudiamos la clasificación de 10 condiciones de rodamiento (normal y tres tipos de falla con tres severidades) del conjunto CWRU bajo un escenario que reproduce ambas limitaciones: entrenamiento con cargas de 0 a 2~HP con desbalance inducido (30\,\%, 10\,\% y 3\,\% de las ventanas según severidad) y prueba en la carga de 3~HP nunca vista. Comparamos tres arquitecturas ---una CNN 1D sobre la señal cruda (línea base), una CNN 2D sobre el espectrograma y un Audio Spectrogram Transformer (AST) preentrenado en AudioSet--- bajo tres estrategias de aumento: ninguna, clásica y sintética, generada por un único modelo de difusión condicional 1D (DDPM con guía sin clasificador). Con 3 semillas, el mejor sistema alcanza un F1-macro de \pend{X.XXX $\pm$ X.XXX} en 3~HP (\pend{modelo + aumento}), frente a \pend{X.XXX} de la línea base; con ruido de 0~dB, \pend{resultado}. El análisis Grad-CAM muestra que \pend{\% de las ventanas} concentran la activación en la periodicidad de las frecuencias teóricas de falla (BPFO/BPFI). El costo total fue de \GPUH~horas de GPU. Concluimos que \pend{conclusión principal en una oración}.
+\end{abstract}
+
+\begin{IEEEkeywords}
+diagnóstico de fallas, rodamientos, modelos de difusión, Audio Spectrogram Transformer, aumento de datos, desbalance de clases, Grad-CAM.
+\end{IEEEkeywords}
+
+% ===========================================================================
+\section{Introducción}
+Los rodamientos concentran el 41--44\,\% de las fallas de los motores eléctricos industriales~\cite{ieee1985motor}. Una falla no detectada detiene la máquina y todo lo que depende de ella; en la industria peruana esto alcanza a molinos, fajas y bombas de la minería, a las estaciones de bombeo de agua y a las bombas de riego y cámaras de frío de la agroindustria. El \emph{mantenimiento predictivo} busca detectar el daño a tiempo a partir de un sensor de vibración y decidir cuándo intervenir.
+
+El aprendizaje profundo aprende directamente de la señal las características que antes se diseñaban a mano (envolvente, curtosis, bandas espectrales)~\cite{randall2011tutorial,zhao2020benchmark}, pero en planta enfrenta dos obstáculos que el uso habitual del conjunto CWRU oculta~\cite{smith2015cwru,neupane2020review}: (i) los datos de falla son escasos ---casi todo el registro corresponde a la máquina sana y las fallas severas son las más raras--- y (ii) la condición de operación cambia (carga, velocidad, ruido). Este trabajo formula el diagnóstico en un escenario que reproduce ambas dificultades y evalúa si la generación de señales sintéticas con un modelo de difusión mitiga la escasez de fallas, y si arquitecturas modernas como el Transformer preentrenado aportan sobre una CNN.
+
+\textbf{Contribuciones.}
+\begin{enumerate}
+\item Un protocolo de evaluación exigente sobre CWRU: partición por carga (0--2~HP para entrenar, 3~HP para probar), desbalance de cola larga por severidad, evaluación con ruido (10 y 0~dB) y 3 semillas, sin fuga de datos entre particiones.
+\item Una comparación controlada $3\times3$ entre arquitecturas (CNN 1D, CNN 2D y AST) y estrategias de aumento (ninguna, clásica y difusión condicional con un único generador para las 10 clases).
+\item Un análisis de interpretabilidad que contrasta Grad-CAM y la atención del AST con las frecuencias de falla que predice la cinemática del rodamiento (BPFO, BPFI), y una evaluación de la calidad de las señales sintéticas (t-SNE y TSTR).
+\item La corrección documentada de dos problemas del conjunto CWRU (frecuencia de muestreo de la línea base normal y un archivo con una señal duplicada), y un repositorio reproducible.
+\end{enumerate}
+
+% ===========================================================================
+\section{Trabajos relacionados}
+\textbf{Diagnóstico de rodamientos y CWRU.} Randall y Antoni~\cite{randall2011tutorial} establecen el diagnóstico clásico por análisis de envolvente alrededor de las frecuencias características de falla. Smith y Randall~\cite{smith2015cwru} analizan el conjunto CWRU archivo por archivo y muestran que varias condiciones no son diagnosticables con claridad, por lo que exactitudes cercanas al 100\,\% deben leerse con cautela. Las revisiones de Neupane y Seok~\cite{neupane2020review} y de Zhao~\textit{et al.}~\cite{zhao2020benchmark} recopilan modelos de aprendizaje profundo sobre CWRU y advierten que muchas particiones aleatorias de ventanas solapadas sobreestiman el desempeño; nuestro protocolo separa por carga y en el tiempo para evitarlo. Paderborn~\cite{lessmeier2016kat} ofrece daños reales por desgaste y queda como validación futura.
+
+\textbf{Redes convolucionales sobre la señal.} WDCNN~\cite{zhang2017wdcnn} propone una CNN 1D con un primer núcleo ancho que actúa como banco de filtros y reporta robustez al ruido y a cambios de carga; la usamos como línea base.
+
+\textbf{Transformers para audio.} El Transformer~\cite{vaswani2017attention} y su versión para imágenes por parches, ViT~\cite{dosovitskiy2021vit}, dieron lugar al AST~\cite{gong2021ast}, que aplica atención sobre parches del espectrograma mel y se preentrena en AudioSet~\cite{gemmeke2017audioset}. A diferencia de los trabajos que entrenan Transformers desde cero sobre vibración, evaluamos si el preentrenamiento en audio general se transfiere a vibración industrial.
+
+\textbf{Modelos generativos para el desbalance.} Los modelos de difusión (DDPM)~\cite{ho2020ddpm} generan muestras invirtiendo un proceso de ruido; DDIM~\cite{song2021ddim} acelera el muestreo y la guía sin clasificador~\cite{ho2022cfg} controla la fidelidad a la clase. Yang~\textit{et al.}~\cite{yang2024ddpmfault} y Wang~\textit{et al.}~\cite{wang2024ddimtransnet} aplican difusión al diagnóstico con datos desbalanceados, pero generan imágenes tiempo-frecuencia (CWT, GADF) y prueban en la misma condición de operación. Nosotros generamos directamente la señal 1D con un único modelo condicional, la evaluamos bajo cambio de carga y la comparamos contra aumento clásico~\cite{park2019specaugment}, que es el control necesario para atribuir la mejora al modelo generativo.
+
+\textbf{Interpretabilidad.} Grad-CAM~\cite{selvaraju2017gradcam} y el \emph{rollout} de atención~\cite{abnar2020rollout} explican la decisión; la evaluación TSTR (entrenar con sintético, probar con real)~\cite{esteban2017rcgan} mide la utilidad de los datos generados.
+
+% ===========================================================================
+\section{Metodología}
+\subsection{Datos}
+Usamos el CWRU Bearing Data Center~\cite{cwru}: vibración del acelerómetro del lado de accionamiento (\emph{drive end}) de un motor de 2~HP con rodamiento SKF~6205, a 12~kHz, para cuatro cargas (0--3~HP, 1797--1730~rpm). Las 10 clases son: Normal y fallas en la bola (B), la pista interna (IR) y la pista externa en la posición de las 6 (OR), cada una con diámetros de 0,007, 0,014 y 0,021~in; en total, 40 archivos de unos 10~s. Se excluyen el daño de 0,028~in (no existe para OR), las posiciones OR @3 y @12 y los datos del lado del ventilador. La fuente es pública para uso académico; los archivos se descargan de un espejo con los \texttt{.mat} originales.
+
+\textbf{Correcciones de datos.} Verificamos que la línea base Normal está registrada a 48~kHz y no a 12~kHz: sus líneas espectrales (159,5, 360 y 533,5~Hz) coinciden con las de los archivos de falla solo al leerla a 48~kHz, y su duración en muestras es cuatro veces mayor. Sin corrección, la clase Normal tiene otra escala temporal y espectral y la red puede reconocerla por ese artefacto; la remuestreamos a 12~kHz con un filtro polifásico. Además, el archivo \texttt{99\_Normal\_2.mat} contiene también la señal de \texttt{98} (carga 1); seleccionamos la variable que corresponde al número del archivo.
+
+\textbf{Ventanas y partición.} Cada señal se divide en ventanas de $L=2048$ muestras (171~ms, unas 5 revoluciones) normalizadas por ventana ($z$-score). Entrenamiento: cargas 0--2~HP, el 80\,\% inicial de cada señal con paso 512; validación: el 20\,\% final con paso 2048 (sin solape con entrenamiento); prueba: la carga de 3~HP completa con paso 2048, nunca usada para elegir épocas ni hiperparámetros. El desbalance se induce solo en entrenamiento, conservando el 30\,\%, 10\,\% y 3\,\% de las ventanas de las severidades 0,007, 0,014 y 0,021~in. La Tabla~\ref{tab:particiones} resume las particiones (\NTRAIN{} ventanas de entrenamiento, \NVAL{} de validación y \NTEST{} de prueba).
+
+\begin{table}[t]
+\centering
+\caption{Ventanas por clase y partición.}
+\label{tab:particiones}
+\footnotesize
+\tablagen{tabla_particiones}
+\end{table}
+
+\textbf{Física de la falla.} Un defecto produce impactos periódicos a una frecuencia que depende de la geometría (número de bolas $N_b=9$, diámetro de bola $d$, diámetro primitivo $D$, ángulo de contacto $\phi$) y de la frecuencia de giro $f_r$~\cite{randall2011tutorial}:
+\begin{align}
+\mathrm{BPFO} &= \tfrac{N_b}{2} f_r \left(1-\tfrac{d}{D}\cos\phi\right) = 3{,}585\,f_r, \label{eq:bpfo}\\
+\mathrm{BPFI} &= \tfrac{N_b}{2} f_r \left(1+\tfrac{d}{D}\cos\phi\right) = 5{,}415\,f_r, \label{eq:bpfi}
+\end{align}
+es decir, 103~Hz y 156~Hz a 1730~rpm. Estas frecuencias sirven para verificar qué aprendió la red (Sección~\ref{sec:interp}).
+
+\subsection{Arquitecturas}
+La Fig.~\ref{fig:pipeline} resume el flujo.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=2.5mm and 3mm, font=\scriptsize,
+  box/.style={draw, rounded corners=1.5pt, align=center, minimum height=6mm, inner sep=2pt, fill=#1},
+  box/.default=white, >={Stealth[length=1.6mm]}]
+\node[box=gray!10] (sig) {Señal 12\,kHz\\ventana 2048};
+\node[box=orange!15, below=of sig] (ddpm) {DDPM 1D condicional\\U-Net + FiLM, CFG};
+\node[box=gray!10, right=6mm of sig] (aug) {Aumento:\\ninguno / clásico /\\difusión};
+\node[box=blue!10, right=6mm of aug, yshift=7mm] (c1) {CNN 1D (WDCNN)};
+\node[box=blue!10, below=1.5mm of c1] (c2) {STFT $\rightarrow$ CNN 2D};
+\node[box=blue!10, below=1.5mm of c2] (c3) {16\,kHz $\rightarrow$ mel $\rightarrow$ AST};
+\node[box=green!12, below=of c3] (out) {10 clases\\F1-macro, 3\,HP};
+\draw[->] (sig) -- (aug); \draw[->] (sig) -- (ddpm); \draw[->] (ddpm) -| (aug);
+\draw[->] (aug.east) -- (c1.west); \draw[->] (aug.east) -- (c2.west); \draw[->] (aug.east) -- (c3.west);
+\draw[->] (c3) -- (out);
+\end{tikzpicture}
+\caption{Flujo del método: un único DDPM condicional genera ventanas de las clases escasas; tres clasificadores se entrenan con cada estrategia de aumento y se evalúan en la carga no vista.}
+\label{fig:pipeline}
+\end{figure}
+
+\textbf{CNN 1D (línea base).} Arquitectura tipo WDCNN~\cite{zhang2017wdcnn}: una primera convolución de núcleo 64 y paso 16 seguida de cuatro bloques convolucionales (núcleo 3; BatchNorm, ReLU y \emph{max-pooling}), promedio global y un perceptrón de 100 unidades con \emph{dropout}~0,2.
+
+\textbf{CNN 2D.} Sobre el espectrograma $S=\log(1+|\mathrm{STFT}(x)|)$ (ventana de Hann de 256 muestras, salto 8), normalizado por muestra; cuatro bloques convolucionales $3\times3$ (32--128 canales), promedio global y \emph{dropout}~0,3. Separa el efecto de la representación (1D frente a espectrograma) del de la arquitectura.
+
+\textbf{AST.} Partimos del modelo \nolinkurl{MIT/ast-finetuned-audioset-10-10-0.4593}~\cite{gong2021ast}: el espectrograma mel de 128 bandas se divide en parches de $16\times16$ que se proyectan, se suman a embeddings posicionales y pasan por 12 capas de autoatención
+\begin{equation}
+\mathrm{Attn}(Q,K,V)=\mathrm{softmax}\!\left(QK^\top/\sqrt{d_k}\right)V.
+\end{equation}
+Como el AST se preentrenó con audio a 16~kHz, remuestreamos la ventana de 12 a 16~kHz antes del espectrograma (ventana de 25~ms y salto de 2~ms), de modo que cada banda mel corresponde a las mismas frecuencias en Hz que en el preentrenamiento; las bandas por encima de 6~kHz (Nyquist original) quedan sin energía. Las 86 tramas resultantes se rellenan a 96 y los embeddings posicionales preentrenados ($12\times101$ parches) se interpolan bilinealmente a $12\times9$. Se reemplaza la cabeza por una capa lineal de 10 salidas y se ajusta toda la red.
+
+\subsection{Aumento de datos}
+\textbf{Clásico.} Durante el entrenamiento, cada ventana recibe ruido blanco con SNR aleatoria entre 10 y 30~dB, un desplazamiento circular aleatorio y un escalamiento de amplitud en $[0{,}8;\,1{,}2]$; para los modelos sobre espectrograma se añade SpecAugment~\cite{park2019specaugment} (dos máscaras de frecuencia y de tiempo).
+
+\textbf{Difusión condicional.} Entrenamos un DDPM~\cite{ho2020ddpm} sobre las ventanas de entrenamiento (desbalanceadas) con el proceso directo
+\begin{equation}
+q(x_t\mid x_0)=\mathcal{N}\!\left(\sqrt{\bar\alpha_t}\,x_0,\;(1-\bar\alpha_t)I\right),\quad \bar\alpha_t=\textstyle\prod_{s\le t}(1-\beta_s),
+\end{equation}
+con $T=1000$ y $\beta_t$ lineal entre $10^{-4}$ y $0{,}02$. Una U-Net 1D (canales 32--256, bloques residuales condicionados por FiLM~\cite{perez2018film} sobre la suma de los embeddings del paso $t$ y de la clase $y$) predice el ruido minimizando
+\begin{equation}
+\mathcal{L}=\mathbb{E}_{x_0,y,t,\epsilon}\left\|\epsilon-\epsilon_\theta\!\left(\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\,\epsilon,\,t,\,y\right)\right\|^2 .
+\end{equation}
+Con probabilidad 0,1 la etiqueta se reemplaza por una clase nula para aprender también el modelo incondicional, y en el muestreo se aplica guía sin clasificador~\cite{ho2022cfg}
+\begin{equation}
+\tilde\epsilon=(1+w)\,\epsilon_\theta(x_t,t,y)-w\,\epsilon_\theta(x_t,t,\varnothing),\quad w=2,
+\end{equation}
+con 50 pasos DDIM~\cite{song2021ddim} y pesos promediados por EMA. Se generan ventanas de cada clase hasta igualar la clase mayoritaria (\NSYN{} ventanas sintéticas), y estas se suman al entrenamiento. El generador nunca ve validación ni prueba.
+
+\subsection{Entrenamiento y métricas}
+Todos los clasificadores se entrenan con entropía cruzada, AdamW~\cite{loshchilov2019adamw} (decaimiento 0,01), calentamiento lineal del 5\,\% seguido de decaimiento coseno, recorte de gradiente en 5, precisión mixta y lotes de 64: 30 épocas con tasa $10^{-3}$ para las CNN y 8 épocas con $3\times10^{-5}$ para el AST. El DDPM se entrena 60 épocas con AdamW ($2\times10^{-4}$). Se conserva la época de mejor F1-macro en validación. La métrica principal es el F1-macro en 3~HP, que pondera igual a cada clase (la exactitud premiaría a la clase Normal); reportamos además el recall por clase, el F1-macro con ruido blanco añadido a 10 y 0~dB, y la media $\pm$ desviación estándar sobre las semillas 0, 1 y 2. La rejilla completa suma $3\times3\times3=27$ entrenamientos. Software: PyTorch \VTORCH{} y Transformers \VTRANSF{}; hardware: \HW.
+
+% ===========================================================================
+\section{Resultados}
+\subsection{Línea base y ablaciones}
+La Tabla~\ref{tab:resumen} compara las nueve combinaciones. \pend{Describir: (1) cuánto mejora el mejor sistema sobre la CNN 1D sin aumento; (2) efecto de la representación (CNN 1D frente a CNN 2D); (3) efecto del Transformer preentrenado (CNN 2D frente a AST); (4) efecto del aumento clásico y de la difusión en cada modelo, indicando si la diferencia supera la desviación entre semillas; (5) robustez al ruido.} La Fig.~\ref{fig:f1} muestra las mismas cifras.
+
+\begin{table*}[t]
+\centering
+\caption{F1-macro en la carga no vista (3~HP), limpio y con ruido, media $\pm$ desviación sobre 3 semillas. En negrita, el mejor por columna.}
+\label{tab:resumen}
+\small
+\tablagen{tabla_resumen}
+\end{table*}
+
+\begin{figure}[t]
+\centering
+\figgen{fig05_f1_por_modelo_aumento}{\columnwidth}
+\caption{F1-macro en 3~HP por modelo y estrategia de aumento (barras: media; error: desviación entre semillas).}
+\label{fig:f1}
+\end{figure}
+
+\textbf{Clases escasas.} La Tabla~\ref{tab:recall} muestra el recall de las clases más afectadas por el desbalance (severidades 0,014 y 0,021~in). \pend{Analizar si la difusión mejora específicamente las clases con 3\,\% de datos y cuáles se confunden (Fig.~\ref{fig:cm}).}
+
+\begin{table}[t]
+\centering
+\caption{Recall de las clases minoritarias en 3~HP (semilla media).}
+\label{tab:recall}
+\resizebox{\columnwidth}{!}{\tablagen{tabla_recall}}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\figgen{fig06_matrices_confusion}{\columnwidth}
+\caption{Matrices de confusión en 3~HP.}
+\label{fig:cm}
+\end{figure}
+
+\subsection{Calidad de las señales sintéticas}
+\pend{Comentar la Fig.~\ref{fig:sintetico} (forma de onda y espectro real frente a sintético), la Fig.~\ref{fig:tsne} (t-SNE: ¿las sintéticas caen en los mismos grupos que las reales?) y la Tabla~\ref{tab:tstr} (TSTR: F1 de un clasificador entrenado solo con sintéticos y probado con reales).}
+
+\begin{figure}[t]
+\centering
+\figgen{fig04_real_vs_sintetico}{\columnwidth}
+\caption{Ventanas y espectros reales frente a sintéticos por clase.}
+\label{fig:sintetico}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figgen{fig11_tsne}{0.9\columnwidth}
+\caption{t-SNE de los embeddings de la CNN 1D: ventanas reales y sintéticas.}
+\label{fig:tsne}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{TSTR: entrenamiento solo con ventanas sintéticas, prueba con reales.}
+\label{tab:tstr}
+\resizebox{\columnwidth}{!}{\tablagen{tabla_tstr}}
+\end{table}
+
+\subsection{Interpretabilidad}\label{sec:interp}
+Para cada ventana de prueba de las clases IR y OR calculamos el Grad-CAM~\cite{selvaraju2017gradcam} de la segunda etapa convolucional, cuya resolución temporal (375~Hz) permite resolver la periodicidad de BPFO y BPFI, y estimamos la frecuencia dominante del mapa de activación. La Tabla~\ref{tab:gradcam} compara esa frecuencia con las ecuaciones~\eqref{eq:bpfo}--\eqref{eq:bpfi}. \pend{Interpretar: porcentaje de ventanas cuya activación coincide (±12\,\%) con la frecuencia teórica; si la red atiende a los impactos del defecto o a otras componentes.} La Fig.~\ref{fig:ast} muestra la atención del AST (\emph{rollout}~\cite{abnar2020rollout}) por banda mel. \pend{Qué bandas atiende por clase.}
+
+\begin{table}[t]
+\centering
+\caption{Frecuencia dominante del Grad-CAM frente a la frecuencia teórica de falla (3~HP).}
+\label{tab:gradcam}
+\tablagen{tabla_gradcam}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\figgen{fig08_gradcam_2d}{\columnwidth}
+\caption{Grad-CAM de la CNN 2D sobre el espectrograma para clases IR y OR.}
+\label{fig:gradcam}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\figgen{fig10_ast_atencion}{\columnwidth}
+\caption{Atención del AST por banda mel y clase.}
+\label{fig:ast}
+\end{figure}
+
+\subsection{Costo computacional}
+La Tabla~\ref{tab:costo} desglosa el tiempo de cómputo: el experimento completo requirió \GPUH~horas de GPU en \HW.
+
+\begin{table}[t]
+\centering
+\caption{Costo computacional de la corrida completa.}
+\label{tab:costo}
+\footnotesize
+\tablagen{tabla_costo}
+\end{table}
+
+% ===========================================================================
+\section{Discusión}
+\pend{Interpretación crítica de los resultados: por qué el aumento por difusión ayuda (o no) bajo cambio de carga; si el preentrenamiento en audio se transfiere a vibración; casos de error recurrentes (p.\,ej., confusión entre severidades de bola, que Smith y Randall~\cite{smith2015cwru} señalan como difíciles de diagnosticar).}
+
+\textbf{Limitaciones.} (i) En CWRU cada condición de falla corresponde a un único rodamiento ensayado en las cuatro cargas; probar en 3~HP mide la generalización a una nueva condición de operación, no a un rodamiento nuevo, y puede sobrestimar el desempeño en campo. (ii) Los daños se introdujeron artificialmente por electroerosión; las fallas por desgaste real (Paderborn~\cite{lessmeier2016kat}) son más difusas. (iii) La clase Normal procede de una única grabación por carga. (iv) El AST se preentrenó con sonidos generales, no con vibración, y su entrada pierde la banda superior a 6~kHz. (v) Con 3 semillas, diferencias menores que la desviación no son concluyentes.
+
+\textbf{Sesgos y uso responsable.} El modelo aprende un único banco de ensayo, motor y rodamiento; aplicarlo a otra máquina sin validación local puede producir falsas alarmas o, peor, fallas no detectadas. Recomendamos usarlo como apoyo al técnico de mantenimiento ---verificando con el espectro de envolvente que la alarma coincide con BPFO/BPFI--- y no como decisión automática de parada. Las señales sintéticas no deben usarse para validar ni reemplazar datos reales de prueba.
+
+\textbf{Impacto.} El enfoque apunta a contextos con pocos registros de falla, como las pequeñas y medianas industrias peruanas, donde instalar un acelerómetro es barato pero acumular historiales de fallas toma años; la generación condicional permite entrenar con los pocos eventos disponibles.
+
+% ===========================================================================
+\section{Conclusiones}
+\pend{2--4 hallazgos principales con números.} Como trabajo futuro proponemos validar en Paderborn y en datos de campo, filtrar las señales sintéticas con criterios físicos (presencia de BPFO/BPFI en su envolvente), y extender el enfoque a la estimación de vida útil remanente con redes informadas por física.
+
+% ===========================================================================
+\section*{Contribuciones}
+% Ajustar con las tareas reales de cada integrante (el jurado puede preguntar a cada uno sobre lo que declara).
+\begin{center}
+\footnotesize
+\begin{tabular}{p{0.3\columnwidth}p{0.6\columnwidth}}
+\toprule
+Integrante & Tareas en las que participó \\ \midrule
+Jhafet Cánepa Maceda & Diseño experimental; implementación del paquete (modelos, DDPM, entrenamiento, interpretabilidad); repositorio \\
+Lenin Dixon Herrera Padilla & Verificación y curación de datos (muestreo de la línea base, archivo duplicado); remuestreo del AST; reproducibilidad del repositorio; redacción del artículo \\
+Hipólito Coaguila Berrios & \pend{completar: p.\,ej., ejecución de experimentos, análisis de resultados, diapositivas} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section*{Declaración de uso de asistentes de IA}
+El equipo utilizó Claude (Anthropic) para revisar y depurar el código, verificar el conjunto de datos, documentar el repositorio y apoyar la redacción de este artículo. \pend{Añadir otras herramientas usadas por el equipo y para qué.} Todos los resultados provienen de ejecuciones propias del equipo y fueron revisados por sus integrantes.
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
