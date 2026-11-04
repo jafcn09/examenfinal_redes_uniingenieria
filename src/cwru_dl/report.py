@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import shutil
 import time
 
@@ -191,12 +192,34 @@ def cost_table(cfg: CFG, df: pd.DataFrame, diff_info: dict) -> pd.DataFrame:
     return cost
 
 
+def package_versions() -> dict:
+    """Versiones exactas de Python y de las dependencias usadas en la corrida."""
+    import platform
+    from importlib.metadata import PackageNotFoundError, version
+    out = {"python": platform.python_version()}
+    for pkg in ("torch", "torchaudio", "transformers", "numpy", "scipy", "scikit-learn", "pandas", "matplotlib", "pyyaml"):
+        try:
+            out[pkg] = version(pkg)
+        except PackageNotFoundError:
+            out[pkg] = None
+    return out
+
+
+def write_lockfile(path) -> None:
+    """Fija las versiones exactas de la corrida en formato requirements (reproducibilidad)."""
+    v = package_versions()
+    lines = [f"# Versiones exactas de la corrida (Python {v.pop('python')}). Instalar con: pip install -r results/requirements-lock.txt"]
+    lines += [f"{k}=={x}" for k, x in v.items() if x]
+    Path(path).write_text("\n".join(lines) + "\n")
+
+
 def write_manifest(cfg: CFG, splits: dict, Xsyn, gpu_hours: float) -> dict:
-    manifest = {"fecha": time.strftime("%Y-%m-%d %H:%M"), "hardware": HW, "torch": torch.__version__, "perfil": cfg.profile,
+    manifest = {"fecha": time.strftime("%Y-%m-%d %H:%M"), "hardware": HW, "versiones": package_versions(), "perfil": cfg.profile,
                 "config": cfg.as_dict(), "n_train": int(len(splits["train"][0])), "n_sinteticas": int(len(Xsyn)),
                 "n_val": int(len(splits["val"][0])), "n_test": int(len(splits["test"][0])), "clases": CLASSES, "gpu_horas": gpu_hours,
                 "tablas": sorted(p.name for p in (cfg.out / "tables").glob("*.csv")), "figuras": sorted(p.name for p in (cfg.out / "figures").glob("*.png")),
                 "pesos": sorted(p.name for p in (cfg.out / "weights").glob("*.pt"))}
     (cfg.out / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False))
+    write_lockfile(cfg.out / "requirements-lock.txt")
     shutil.make_archive(str(cfg.out.parent / "results_cwru"), "zip", cfg.out)
     return manifest

@@ -1,5 +1,8 @@
-torch>=2.2
-torchaudio>=2.2
+# Dependencias con las versiones mínimas probadas (Colab, GPU T4).
+# Las versiones exactas de la corrida del artículo quedan en results/requirements-lock.txt
+# (lo genera `python -m cwru_dl report`): pip install -r results/requirements-lock.txt
+torch>=2.2,<3
+torchaudio>=2.2,<3
 transformers>=4.40
 numpy>=1.26
 scipy>=1.11
