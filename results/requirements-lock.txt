@@ -1,0 +1,10 @@
+# Versiones exactas de la corrida (Python 3.13.16). Instalar con: pip install -r results/requirements-lock.txt
+torch==2.11.0+cu130
+torchaudio==2.11.0+cu130
+transformers==5.22.0
+numpy==2.4.6
+scipy==1.16.3
+scikit-learn==1.6.1
+pandas==2.2.3
+matplotlib==3.10.0
+pyyaml==6.0.3

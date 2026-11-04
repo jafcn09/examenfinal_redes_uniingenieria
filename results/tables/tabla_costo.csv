@@ -1,0 +1,5 @@
+componente,segundos,minutos,horas_GPU,hardware
+Clasificadores (36 corridas),3212.848713874817,53.5,0.892,Tesla T4
+DDPM entrenamiento,73.70459032058716,1.2,0.02,Tesla T4
+DDPM muestreo,133.50398421287537,2.2,0.037,Tesla T4
+TOTAL,3420.0572884082794,57.0,0.95,Tesla T4

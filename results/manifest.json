@@ -1,0 +1,118 @@
+{
+ "fecha": "2026-11-04 06:53",
+ "hardware": "Tesla T4",
+ "versiones": {
+  "python": "3.13.16",
+  "torch": "2.11.0+cu130",
+  "torchaudio": "2.11.0+cu130",
+  "transformers": "5.22.0",
+  "numpy": "2.4.6",
+  "scipy": "1.16.3",
+  "scikit-learn": "1.6.1",
+  "pandas": "2.2.3",
+  "matplotlib": "3.10.0",
+  "pyyaml": "6.0.3"
+ },
+ "perfil": "full",
+ "config": {
+  "root": "data/CWRU",
+  "out": "/content/drive/MyDrive/cwru_resultados_full",
+  "fs": 12000,
+  "win": 2048,
+  "train_stride": 512,
+  "eval_stride": 2048,
+  "train_loads": [
+   0,
+   1,
+   2
+  ],
+  "test_loads": [
+   3
+  ],
+  "val_frac": 0.2,
+  "imbalance": {
+   "007": 0.3,
+   "014": 0.1,
+   "021": 0.03
+  },
+  "seeds": [
+   0,
+   1,
+   2
+  ],
+  "batch": 64,
+  "epochs_cnn": 30,
+  "epochs_ast": 8,
+  "lr_cnn": 0.001,
+  "lr_ast": 3e-05,
+  "ast_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+  "ast_frames": 96,
+  "ast_fs": 16000,
+  "diff_epochs": 60,
+  "diff_batch": 64,
+  "diff_T": 1000,
+  "ddim_steps": 50,
+  "cfg_w": 2.0,
+  "syn_cap": 0,
+  "snr_eval": [
+   10,
+   0
+  ],
+  "profile": "full"
+ },
+ "n_train": 1184,
+ "n_sinteticas": 3456,
+ "n_val": 324,
+ "n_test": 591,
+ "clases": [
+  "Normal",
+  "B007",
+  "B014",
+  "B021",
+  "IR007",
+  "IR014",
+  "IR021",
+  "OR007",
+  "OR014",
+  "OR021"
+ ],
+ "gpu_horas": 0.95,
+ "tablas": [
+  "distribucion_particiones.csv",
+  "resultados_por_corrida.csv",
+  "tabla_ast_atencion_bandas.csv",
+  "tabla_costo.csv",
+  "tabla_gradcam_frecuencias.csv",
+  "tabla_recall_por_clase.csv",
+  "tabla_resumen.csv",
+  "tabla_tstr.csv"
+ ],
+ "figuras": [
+  "fig01_distribucion.png",
+  "fig02_envolvente_teorica.png",
+  "fig03_difusion_loss.png",
+  "fig04_real_vs_sintetico.png",
+  "fig05_f1_por_modelo_aumento.png",
+  "fig06_matrices_confusion.png",
+  "fig07_curvas_val.png",
+  "fig08_gradcam_2d.png",
+  "fig09_gradcam_1d.png",
+  "fig10_ast_atencion.png",
+  "fig11_tsne.png"
+ ],
+ "pesos": [
+  "AST_classic_s0.pt",
+  "AST_diffusion_s0.pt",
+  "AST_none_s0.pt",
+  "AST_oversample_s0.pt",
+  "CNN1D_classic_s0.pt",
+  "CNN1D_diffusion_s0.pt",
+  "CNN1D_none_s0.pt",
+  "CNN1D_oversample_s0.pt",
+  "CNN2D_classic_s0.pt",
+  "CNN2D_diffusion_s0.pt",
+  "CNN2D_none_s0.pt",
+  "CNN2D_oversample_s0.pt",
+  "ddpm_unet1d.pt"
+ ]
+}
