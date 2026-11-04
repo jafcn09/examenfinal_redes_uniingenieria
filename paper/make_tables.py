@@ -17,7 +17,7 @@ import pandas as pd
 
 PAPER = Path(__file__).resolve().parent
 MODEL_NAMES = {"CNN1D": "CNN 1D", "CNN2D": "CNN 2D", "AST": "AST"}
-AUG_NAMES = {"none": "Ninguno", "classic": "Clásico", "diffusion": "Difusión"}
+AUG_NAMES = {"none": "Ninguno", "oversample": "Sobremuestreo", "classic": "Clásico", "diffusion": "Difusión"}
 FIGS = ["fig01_distribucion", "fig02_envolvente_teorica", "fig03_difusion_loss", "fig04_real_vs_sintetico",
         "fig05_f1_por_modelo_aumento", "fig06_matrices_confusion", "fig07_curvas_val", "fig08_gradcam_2d",
         "fig09_gradcam_1d", "fig10_ast_atencion", "fig11_tsne"]

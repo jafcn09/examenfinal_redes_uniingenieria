@@ -91,7 +91,7 @@ def fig_results(cfg: CFG, df: pd.DataFrame):
 
 
 def fig_confusion(cfg: CFG, records: list, model: str = "CNN1D"):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.2))
+    fig, axes = plt.subplots(1, len(AUG_NAMES), figsize=(5 * len(AUG_NAMES), 4.2))
     for ax, aname in zip(axes, AUG_NAMES):
         r = next((r for r in records if r["model"] == model and r["aug"] == aname and r["seed"] == cfg.seeds[0]), None)
         if r is None:

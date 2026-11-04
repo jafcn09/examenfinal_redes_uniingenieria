@@ -4,7 +4,7 @@
 [![PyTorch](https://img.shields.io/badge/pytorch-%E2%89%A5%202.2-ee4c2c)](https://pytorch.org/)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green)](LICENSE)
 
-Clasificación de 10 condiciones de rodamiento a partir de señales de vibración, comparando **tres arquitecturas** (CNN 1D, CNN 2D, Audio Spectrogram Transformer) bajo **tres estrategias de aumento de datos** (ninguno, clásico, difusión condicional), en un escenario con **cambio de dominio por carga**, **desbalance de cola larga** y **ruido aditivo**.
+Clasificación de 10 condiciones de rodamiento a partir de señales de vibración, comparando **tres arquitecturas** (CNN 1D, CNN 2D, Audio Spectrogram Transformer) bajo **cuatro estrategias de aumento de datos** (ninguno, sobremuestreo, clásico, difusión condicional), en un escenario con **cambio de dominio por carga**, **desbalance de cola larga** y **ruido aditivo**.
 
 ## Integrantes
 
@@ -20,7 +20,7 @@ Curso **Redes Neuronales y Aprendizaje Profundo (MIA-203)** · Maestría en Inte
 
 Se clasifican 10 condiciones de rodamiento (Normal; Bola, Pista interna y Pista externa a 0.007, 0.014 y 0.021 in) a partir de vibración CWRU a 12 kHz, bajo dos dificultades reales de planta: **cambio de dominio por carga** (se entrena con 0-2 HP y se prueba con 3 HP) y **desbalance de cola larga** en las clases de falla (30 %, 10 %, 3 % por severidad).
 
-Se comparan tres arquitecturas (CNN 1D tipo WDCNN como línea base, CNN 2D sobre espectrograma log-STFT y Audio Spectrogram Transformer preentrenado en AudioSet con fine-tuning) bajo tres condiciones de aumento (sin aumento, clásico, difusión condicional 1D con un único DDPM + classifier-free guidance), con 3 semillas, F1-macro limpio y con ruido (10 dB, 0 dB), Grad-CAM contrastado con las frecuencias teóricas de falla (BPFO/BPFI), atención del AST, t-SNE y TSTR, y costo computacional en horas de GPU.
+Se comparan tres arquitecturas (CNN 1D tipo WDCNN como línea base, CNN 2D sobre espectrograma log-STFT y Audio Spectrogram Transformer preentrenado en AudioSet con fine-tuning) bajo cuatro condiciones de aumento (sin aumento, sobremuestreo de las ventanas reales como control, clásico, difusión condicional 1D con un único DDPM + classifier-free guidance), con 3 semillas, F1-macro limpio y con ruido (10 dB, 0 dB), Grad-CAM contrastado con las frecuencias teóricas de falla (BPFO/BPFI), atención del AST, t-SNE y TSTR, y costo computacional en horas de GPU.
 
 ## Cómo funciona: el flujo de extremo a extremo
 
@@ -36,8 +36,9 @@ Se comparan tres arquitecturas (CNN 1D tipo WDCNN como línea base, CNN 2D sobre
                    entrenado SOLO con el train desbalanceado
                    -> genera ventanas sintéticas hasta igualar la clase mayoritaria
                          |
-   [3] train    rejilla 3 modelos x 3 aumentos x 3 semillas = 27 corridas
+   [3] train    rejilla 3 modelos x 4 aumentos x 3 semillas = 36 corridas
                 none      -> train tal cual
+                oversample -> train + ventanas reales repetidas hasta igualar la clase mayoritaria (control)
                 classic   -> ruido (10-30 dB) + desplazamiento circular + escala + SpecAugment
                 diffusion -> train + ventanas sintéticas del DDPM
                    -> un JSON por corrida en results/runs/
@@ -216,7 +217,7 @@ Cada comando es idempotente: las corridas ya hechas se leen de `results/runs/` y
 |---|---|---|
 | 1. Datos y particiones | `python -m cwru_dl --config configs/full.yaml data` | descarga `data/CWRU`, `tables/distribucion_particiones.csv`, `fig01`, `fig02` |
 | 2. Generador | `python -m cwru_dl --config configs/full.yaml diffusion` | `weights/ddpm_unet1d.pt`, `synthetic/cwru_synthetic.pt`, `fig03`, `fig04` |
-| 3. Rejilla 3×3×3 | `python -m cwru_dl --config configs/full.yaml train` | `runs/*.json`, `weights/<modelo>_<aumento>_s0.pt` |
+| 3. Rejilla 3×4×3 | `python -m cwru_dl --config configs/full.yaml train` | `runs/*.json`, `weights/<modelo>_<aumento>_s0.pt` |
 | 4. Tablas, figuras, interpretabilidad, costo | `python -m cwru_dl --config configs/full.yaml report` | `tabla_resumen`, `tabla_recall_por_clase`, `tabla_gradcam_frecuencias`, `tabla_ast_atencion_bandas`, `tabla_tstr`, `tabla_costo`, `fig05` a `fig11`, `manifest.json`, `results_cwru.zip` |
 | 5. Demo | `python -m cwru_dl demo --cls OR014 --load 3` | predicción por ventana con los pesos guardados |
 
@@ -247,9 +248,9 @@ Se completan con la corrida en Colab (T4); los archivos exactos son `results/tab
 
 | Modelo | Aumento | F1-macro 3 HP | F1 a 10 dB | F1 a 0 dB |
 |---|---|---|---|---|
-| CNN1D | none / classic / diffusion | _tabla_resumen.csv_ | | |
-| CNN2D | none / classic / diffusion | | | |
-| AST | none / classic / diffusion | | | |
+| CNN1D | none / oversample / classic / diffusion | _tabla_resumen.csv_ | | |
+| CNN2D | none / oversample / classic / diffusion | | | |
+| AST | none / oversample / classic / diffusion | | | |
 
 Referencia obtenida en validación en CPU (perfil `fast`, 1 semilla, 10 épocas, sin AST preentrenado): CNN1D sin aumento F1 = 0.85 en 3 HP; el aumento clásico duplica la robustez a 0 dB (0.40 vs 0.20).
 
