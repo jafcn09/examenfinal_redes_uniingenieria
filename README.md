@@ -225,9 +225,9 @@ Un solo modelo o una sola condición: `python -m cwru_dl --config configs/full.y
 Vista previa rápida (1 semilla, menos épocas, ~20 min en T4): añadir `--profile fast`.
 Configuración por experimento: `configs/cnn1d.yaml`, `cnn2d.yaml`, `ast.yaml`, `diffusion.yaml`; `base.yaml` fija datos, particiones, desbalance y semillas.
 
-Para entender los datos antes de entrenar: `notebooks/00_exploracion_datos.ipynb` (explicación con figuras del rodamiento, el banco de ensayo, las señales por clase, las frecuencias de falla BPFO/BPFI, las correcciones de datos, las particiones y lo que ve cada modelo; no requiere GPU).
+Para entender los datos antes de entrenar: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jafcn09/examenfinal_redes_uniingenieria/blob/main/notebooks/00_exploracion_datos.ipynb) `notebooks/00_exploracion_datos.ipynb` (explicación con figuras del rodamiento, el banco de ensayo, las señales por clase, las frecuencias de falla BPFO/BPFI, las correcciones de datos, las particiones y lo que ve cada modelo; no requiere GPU).
 
-En Colab: abrir `notebooks/01_pipeline_colab.ipynb`, elegir GPU T4 y Ejecutar todo (2 a 3 h en T4 para la configuración completa).
+En Colab: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jafcn09/examenfinal_redes_uniingenieria/blob/main/notebooks/01_pipeline_colab.ipynb) abrir `notebooks/01_pipeline_colab.ipynb`, elegir GPU T4 y Ejecutar todo (2 a 3 h en T4 para la configuración completa).
 
 ### Opciones de la línea de comandos
 
