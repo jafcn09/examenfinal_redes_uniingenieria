@@ -13,6 +13,8 @@ def code(s): C.append(nbf.v4.new_code_cell(s.strip("\n")))
 md(r"""
 # 00 · Exploración de los datos: ¿de qué señales estamos hablando?
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jafcn09/examenfinal_redes_uniingenieria/blob/main/notebooks/00_exploracion_datos.ipynb)
+
 **MIA-203 Redes Neuronales y Aprendizaje Profundo · UNI · Grupo 6**
 
 Este notebook explica con imágenes el problema y los datos **antes** de entrenar cualquier red. Responde, en orden:

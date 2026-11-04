@@ -7,6 +7,8 @@ def code(s): C.append(("code", s.strip("\n")))
 md(r"""
 # MIA-203 Examen Final: Diagnóstico de fallas en rodamientos (CWRU) con aumento por difusión condicional
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jafcn09/examenfinal_redes_uniingenieria/blob/main/notebooks/01_pipeline_colab.ipynb)
+
 **Universidad Nacional de Ingeniería · Maestría en Inteligencia Artificial** · Redes Neuronales y Aprendizaje Profundo (MIA-203) · Grupo 6
 **Equipo (Grupo 6):** Hipólito Coaguila Berrios · Lenin Herrera Padilla · Jhafet Cánepa Maceda
 
@@ -238,6 +240,8 @@ def md2(s): D.append(("md", s.strip("\n")))
 def code2(s): D.append(("code", s.strip("\n")))
 md2(r"""
 # Demostración de inferencia (Colab)
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/jafcn09/examenfinal_redes_uniingenieria/blob/main/notebooks/02_demo_inferencia.ipynb)
 Carga los pesos entrenados (enlace del README) y clasifica ventanas de un archivo CWRU de principio a fin. No entrena nada.
 """)
 code2(r"""
