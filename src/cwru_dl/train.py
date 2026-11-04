@@ -16,7 +16,7 @@ from .augment import add_noise, classic_augment
 from .config import CFG, CLASSES, DEVICE
 from .models import build_model, model_spec
 
-AUG_NAMES = ("none", "classic", "diffusion")
+AUG_NAMES = ("none", "oversample", "classic", "diffusion")
 
 
 def seed_all(seed: int) -> None:
@@ -79,9 +79,20 @@ def weight_path(cfg: CFG, mname: str, aname: str, seed: int):
     return cfg.out / "weights" / f"{mname}_{aname}_s{seed}.pt"
 
 
+def oversample(X: torch.Tensor, y: torch.Tensor, seed: int = 0):
+    """Control de la difusión: repite ventanas reales de cada clase (muestreo con reemplazo) hasta igualar
+    la clase mayoritaria. Produce la misma cantidad de ventanas por clase que el aumento por difusión."""
+    g = torch.Generator().manual_seed(seed)
+    counts = torch.bincount(y, minlength=len(CLASSES)); target = int(counts.max())
+    extra = [torch.nonzero(y == c).squeeze(1)[torch.randint(int(counts[c]), (target - int(counts[c]),), generator=g)]
+             for c in range(len(CLASSES)) if 0 < counts[c] < target]
+    idx = torch.cat([torch.arange(len(y)), *extra])
+    return X[idx], y[idx]
+
+
 def run_experiments(cfg: CFG, splits: dict, Xsyn, ysyn, models=("CNN1D", "CNN2D", "AST"), augs=AUG_NAMES, log=print) -> list:
     Xtr, ytr = splits["train"]; Xva, yva = splits["val"]; Xte, yte = splits["test"]
-    datasets = {"none": (Xtr, ytr), "classic": (Xtr, ytr), "diffusion": (torch.cat([Xtr, Xsyn]), torch.cat([ytr, ysyn]))}
+    datasets = {"none": (Xtr, ytr), "oversample": oversample(Xtr, ytr), "classic": (Xtr, ytr), "diffusion": (torch.cat([Xtr, Xsyn]), torch.cat([ytr, ysyn]))}
     spec = model_spec(cfg); records = []
     for mname in models:
         for aname in augs:

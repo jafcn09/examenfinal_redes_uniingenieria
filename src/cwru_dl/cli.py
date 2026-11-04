@@ -86,7 +86,7 @@ def main(argv=None):
     sub.add_parser("data", help="descarga, particiones y figuras 1-2").set_defaults(fn=cmd_data)
     sub.add_parser("diffusion", help="entrena el DDPM y genera las ventanas sintéticas").set_defaults(fn=cmd_diffusion)
     t = sub.add_parser("train", help="corre la rejilla modelos x aumentos x semillas"); t.set_defaults(fn=cmd_train)
-    t.add_argument("--models", default="CNN1D,CNN2D,AST"); t.add_argument("--augs", default="none,classic,diffusion")
+    t.add_argument("--models", default="CNN1D,CNN2D,AST"); t.add_argument("--augs", default="none,oversample,classic,diffusion")
     sub.add_parser("report", help="tablas, figuras, interpretabilidad, TSTR, costo y manifest").set_defaults(fn=cmd_report)
     d = sub.add_parser("demo", help="inferencia con pesos guardados"); d.set_defaults(fn=cmd_demo)
     d.add_argument("--cls", default="OR014"); d.add_argument("--load", type=int, default=3); d.add_argument("--aug", default="diffusion")

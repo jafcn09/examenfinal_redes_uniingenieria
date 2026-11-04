@@ -25,7 +25,7 @@ Clasificar 10 condiciones de un rodamiento (Normal, Bola, Pista interna, Pista e
 |---|---|---|
 | Datos | CWRU 12 kHz Drive-End, partición por carga, desbalance inducido | R2 |
 | Modelos | 1D-CNN (WDCNN, línea base), CNN-2D sobre espectrograma log-STFT, AST preentrenado (AudioSet) con fine-tuning | R1, R3 |
-| Aumento (ablación) | Sin aumento vs clásico (ruido, desplazamiento, escala, SpecAugment) vs difusión condicional 1D (DDPM + CFG, un solo generador) | R4 |
+| Aumento (ablación) | Sin aumento vs sobremuestreo (control) vs clásico (ruido, desplazamiento, escala, SpecAugment) vs difusión condicional 1D (DDPM + CFG, un solo generador) | R4 |
 | Métricas | F1-macro y recall por clase en 3 HP (limpio, 10 dB, 0 dB), 3 semillas (media ± desviación) | R4 |
 | Interpretabilidad | Grad-CAM (1D y 2D), atención del AST, periodicidad del CAM vs BPFO/BPFI teóricas, t-SNE real vs sintético, TSTR | R5 |
 | Costo | Hardware y horas de GPU registradas por corrida | R6 |
@@ -34,7 +34,7 @@ Clasificar 10 condiciones de un rodamiento (Normal, Bola, Pista interna, Pista e
 md(r"""
 ## 1. Entorno
 En Colab: clona el repositorio e instala dependencias. En local: ejecuta desde la raíz del repositorio.
-Perfiles: `full` (por defecto con GPU: 3 semillas, 27 corridas), `fast` (1 semilla, menos épocas, ~20 min en T4), `smoke` (automático sin GPU, valida el flujo en minutos).
+Perfiles: `full` (por defecto con GPU: 3 semillas, 36 corridas), `fast` (1 semilla, menos épocas, ~20 min en T4), `smoke` (automático sin GPU, valida el flujo en minutos).
 """)
 
 code(r"""
