@@ -130,7 +130,7 @@ La Fig.~\ref{fig:pipeline} resume el flujo.
 \begin{equation}
 \mathrm{Attn}(Q,K,V)=\mathrm{softmax}\!\left(QK^\top/\sqrt{d_k}\right)V.
 \end{equation}
-Como el AST se preentrenó con audio a 16~kHz, remuestreamos la ventana de 12 a 16~kHz antes del espectrograma (ventana de 25~ms y salto de 2~ms), de modo que cada banda mel corresponde a las mismas frecuencias en Hz que en el preentrenamiento; las bandas por encima de 6~kHz (Nyquist original) quedan sin energía. Las 86 tramas resultantes se rellenan a 96 y los embeddings posicionales preentrenados ($12\times101$ parches) se interpolan bilinealmente a $12\times9$. Se reemplaza la cabeza por una capa lineal de 10 salidas y se ajusta toda la red.
+Como el AST se preentrenó con audio a 16~kHz, remuestreamos la ventana de 12 a 16~kHz antes del espectrograma (ventana de 25~ms y salto de 2~ms), de modo que cada banda mel corresponde a las mismas frecuencias en Hz que en el preentrenamiento; las bandas por encima de 6~kHz (Nyquist original) quedan prácticamente sin energía. Las 86 tramas resultantes se rellenan a 96 y los embeddings posicionales preentrenados ($12\times101$ parches) se interpolan bilinealmente a $12\times9$. Se reemplaza la cabeza por una capa lineal de 10 salidas y se ajusta toda la red.
 
 \subsection{Aumento de datos}
 \textbf{Clásico.} Durante el entrenamiento, cada ventana recibe ruido blanco con SNR aleatoria entre 10 y 30~dB, un desplazamiento circular aleatorio y un escalamiento de amplitud en $[0{,}8;\,1{,}2]$; para los modelos sobre espectrograma se añade SpecAugment~\cite{park2019specaugment} (dos máscaras de frecuencia y de tiempo).
