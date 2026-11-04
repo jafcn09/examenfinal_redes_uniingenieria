@@ -1,0 +1,7 @@
+clase,frecuencia teórica,n,CAM: centroide espectral (Hz),CAM: f dominante mediana (Hz),CAM: % coincide (±12 %),Envolvente: f dominante mediana (Hz),Envolvente: % coincide
+IR007,BPFI = 155.7 Hz,60,2864.6,97.3,0.0,155.3,100.0
+IR014,BPFI = 155.7 Hz,59,2746.3,86.0,0.0,156.7,96.6
+IR021,BPFI = 155.7 Hz,59,1972.4,90.4,1.7,155.3,100.0
+OR007,BPFO = 103.0 Hz,59,3656.2,80.0,0.0,104.0,100.0
+OR014,BPFO = 103.0 Hz,59,2939.1,87.9,30.5,126.0,30.5
+OR021,BPFO = 103.0 Hz,59,2978.2,85.1,13.6,102.5,100.0
