@@ -244,15 +244,29 @@ python -m cwru_dl [--config configs/X.yaml] [--profile smoke|fast|full] [--data 
 
 ## Resultados principales
 
-Se completan con la corrida en Colab (T4); los archivos exactos son `results/tables/tabla_resumen.csv`, `tabla_recall_por_clase.csv`, `tabla_gradcam_frecuencias.csv`, `tabla_tstr.csv` y `tabla_costo.csv`.
+Corrida `full` en Colab (GPU Tesla T4, 0.95 h de GPU en total, 36 entrenamientos): F1-macro en la carga no vista de 3 HP, media ± desviación sobre 3 semillas. Archivos exactos en `results/tables/` (`tabla_resumen.csv`, `tabla_recall_por_clase.csv`, `tabla_gradcam_frecuencias.csv`, `tabla_tstr.csv`, `tabla_costo.csv`) y logs por corrida en `results/runs/`.
 
 | Modelo | Aumento | F1-macro 3 HP | F1 a 10 dB | F1 a 0 dB |
 |---|---|---|---|---|
-| CNN1D | none / oversample / classic / diffusion | _tabla_resumen.csv_ | | |
-| CNN2D | none / oversample / classic / diffusion | | | |
-| AST | none / oversample / classic / diffusion | | | |
+| CNN1D | none | 0.972 ± 0.010 | 0.947 ± 0.016 | 0.134 ± 0.028 |
+| CNN1D | oversample | 0.952 ± 0.041 | 0.907 ± 0.061 | 0.125 ± 0.025 |
+| CNN1D | classic | 0.958 ± 0.009 | 0.934 ± 0.016 | 0.484 ± 0.091 |
+| CNN1D | diffusion | 0.885 ± 0.060 | 0.859 ± 0.062 | 0.230 ± 0.043 |
+| CNN2D | none | 1.000 ± 0.000 | 0.018 ± 0.000 | 0.018 ± 0.000 |
+| CNN2D | oversample | 1.000 ± 0.000 | 0.019 ± 0.001 | 0.018 ± 0.000 |
+| CNN2D | classic | 0.988 ± 0.017 | 0.895 ± 0.115 | 0.044 ± 0.024 |
+| CNN2D | diffusion | 1.000 ± 0.000 | 0.815 ± 0.024 | 0.090 ± 0.002 |
+| AST | none | 0.997 ± 0.002 | 0.333 ± 0.122 | 0.086 ± 0.059 |
+| AST | oversample | 1.000 ± 0.000 | 0.514 ± 0.115 | 0.047 ± 0.041 |
+| AST | classic | 0.975 ± 0.027 | 0.971 ± 0.020 | 0.527 ± 0.040 |
+| AST | diffusion | 0.999 ± 0.001 | 0.851 ± 0.028 | 0.158 ± 0.007 |
 
-Referencia obtenida en validación en CPU (perfil `fast`, 1 semilla, 10 épocas, sin AST preentrenado): CNN1D sin aumento F1 = 0.85 en 3 HP; el aumento clásico duplica la robustez a 0 dB (0.40 vs 0.20).
+Lectura rápida:
+- **Señal limpia:** la CNN 2D y el AST llegan a F1 = 1.000 en la carga no vista; la CNN 1D (línea base), a 0.972.
+- **Ruido a 10 dB:** la difusión sube el AST de 0.333 a 0.851 y la CNN 2D de 0.018 a 0.815; el sobremuestreo, con el mismo número de ventanas, no (0.514 y 0.019). La mejora viene del contenido de las muestras generadas, no del equilibrio de clases.
+- **Ruido a 0 dB:** solo el aumento clásico conserva parte del desempeño (AST 0.527, CNN 1D 0.484).
+- **TSTR** (entrenar solo con sintéticas, probar con reales): F1 = 0.680 ± 0.071.
+- **Grad-CAM:** los modelos se apoyan en la banda de resonancia de 2-3.5 kHz más que en la periodicidad de BPFO/BPFI.
 
 ## Qué tabla o figura produce cada número del artículo
 
