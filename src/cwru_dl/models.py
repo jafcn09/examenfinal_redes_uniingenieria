@@ -99,7 +99,13 @@ class ASTClassifier(nn.Module):
         self.grid = (f_p, new_t)
 
     def frontend(self, x):
-        m = torch.log(self.mel(self.resample(x)) + 1e-6)
+        # El espectrograma se calcula en fp32 aunque el entrenamiento use precisión mixta: la potencia mel de
+        # ventanas con impactos fuertes supera 65504 (máximo de fp16) y desbordaría a inf -> pérdida NaN.
+        with torch.autocast(device_type=x.device.type, enabled=False):
+            m = torch.log(self.mel(self.resample(x.float())) + 1e-6)
+            return self._finish_frontend(m)
+
+    def _finish_frontend(self, m):
         m = m[:, :, :self.frames] if m.shape[-1] >= self.frames else F.pad(m, (0, self.frames - m.shape[-1]))
         m = (m - m.mean(dim=(1, 2), keepdim=True)) / (2 * m.std(dim=(1, 2), keepdim=True) + 1e-6)
         if self.training and self.specaug:
