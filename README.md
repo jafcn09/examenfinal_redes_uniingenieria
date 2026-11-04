@@ -309,8 +309,8 @@ examenfinal_redes_uniingenieria/
 ## Semillas y pesos
 
 Semillas fijadas en `configs/base.yaml` (`seeds: [0, 1, 2]`); cada corrida fija NumPy, Python y PyTorch con `seed_all`. Los pesos del mejor estado por (modelo, aumento) para la semilla 0 y el DDPM se guardan en `results/weights/`.
-Enlace a los pesos entrenados (corrida `full` del artículo): **PENDIENTE: pegar aquí el enlace de Google Drive** a la carpeta `results/weights/` y a `results/synthetic/`.
-Para usarlos: descargue `weights/` dentro de `results/` y ejecute `python -m cwru_dl demo --cls OR014 --load 3` o el notebook `notebooks/02_demo_inferencia.ipynb`.
+Pesos entrenados (corrida `full` del artículo): **[results_cwru.zip en Google Drive](https://drive.google.com/file/d/1ZDzayOm1kjgYkRD5ZE4YmWn5TczwMJ3h/view?usp=sharing)** (1.3 GB). Contiene `weights/` (mejor estado por modelo y aumento con semilla 0, y el DDPM `ddpm_unet1d.pt`), `synthetic/` (ventanas sintéticas) y las mismas tablas, figuras y logs de `results/`.
+Para usarlos: descomprima el zip, copie la carpeta `weights/` dentro de `results/` y ejecute `python -m cwru_dl demo --cls OR014 --load 3` o el notebook `notebooks/02_demo_inferencia.ipynb`.
 Las versiones exactas de las dependencias de esa corrida están en `results/requirements-lock.txt`.
 
 ## Decisiones de diseño verificadas
