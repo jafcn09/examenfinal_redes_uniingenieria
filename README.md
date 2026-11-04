@@ -224,7 +224,9 @@ Un solo modelo o una sola condición: `python -m cwru_dl --config configs/full.y
 Vista previa rápida (1 semilla, menos épocas, ~20 min en T4): añadir `--profile fast`.
 Configuración por experimento: `configs/cnn1d.yaml`, `cnn2d.yaml`, `ast.yaml`, `diffusion.yaml`; `base.yaml` fija datos, particiones, desbalance y semillas.
 
-En Colab: abrir `notebooks/01_pipeline_colab.ipynb`, elegir GPU T4, editar `REPO_URL` y Ejecutar todo (2 a 3 h en T4 para la configuración completa).
+Para entender los datos antes de entrenar: `notebooks/00_exploracion_datos.ipynb` (explicación con figuras del rodamiento, el banco de ensayo, las señales por clase, las frecuencias de falla BPFO/BPFI, las correcciones de datos, las particiones y lo que ve cada modelo; no requiere GPU).
+
+En Colab: abrir `notebooks/01_pipeline_colab.ipynb`, elegir GPU T4 y Ejecutar todo (2 a 3 h en T4 para la configuración completa).
 
 ### Opciones de la línea de comandos
 
@@ -284,7 +286,7 @@ examenfinal_redes_uniingenieria/
 │   ├── interpret.py           # Grad-CAM, periodicidad vs BPFO/BPFI, rollout de atención, t-SNE, TSTR
 │   ├── report.py              # fig01-fig11, tablas, tabla de costo, manifest y zip
 │   └── cli.py                 # subcomandos data | diffusion | train | report | demo
-├── notebooks/                 # 01_pipeline_colab.ipynb (orquestador), 02_demo_inferencia.ipynb
+├── notebooks/                 # 00_exploracion_datos.ipynb (exploración didáctica), 01_pipeline_colab.ipynb (orquestador), 02_demo_inferencia.ipynb
 ├── configs/                   # base.yaml + un YAML por experimento (cnn1d, cnn2d, ast, diffusion, full)
 └── results/                   # runs/, tables/, figures/, weights/, synthetic/, manifest.json (generado)
 ```
@@ -302,7 +304,7 @@ Las versiones exactas de las dependencias de esa corrida están en `results/requ
 - La línea base **Normal** de CWRU está registrada a **48 kHz** (las fallas, a 12 kHz). Se verificó comparando sus líneas espectrales (159.5, 360 y 533.5 Hz) con las de los archivos de falla: solo coinciden si se lee a 48 kHz. Por eso `load_signal` la remuestrea a 12 kHz (`NATIVE_FS` en `config.py`); sin este paso la clase Normal tendría otra escala temporal y espectral y la red podría reconocerla por ese atajo en lugar de por el estado del rodamiento.
 - El archivo `99_Normal_2.mat` contiene dos señales (`X098_DE_time`, copia de la carga 1, y `X099_DE_time`). `load_signal` elige la variable cuyo número coincide con el del archivo; así la carga 2 no duplica la carga 1.
 - Limitación: en CWRU cada condición de falla corresponde a un único rodamiento ensayado en las cuatro cargas, por lo que el test en 3 HP evalúa una condición de operación nueva, no un rodamiento nuevo.
-- La señal se remuestrea de 12 kHz a 16 kHz solo para el AST (`ast_fs: 16000`), la frecuencia con la que fue preentrenado en AudioSet, para que cada banda mel corresponda a las mismas frecuencias en Hz que vio en el preentrenamiento. Se conserva una ventana de 25 ms y un salto de 2 ms (≈86 frames por ventana de 2048 muestras); las bandas por encima de 6 kHz (Nyquist de la señal original) quedan sin energía. Las CNN siguen trabajando a 12 kHz. Con `ast_fs: 0` se desactiva el remuestreo.
+- La señal se remuestrea de 12 kHz a 16 kHz solo para el AST (`ast_fs: 16000`), la frecuencia con la que fue preentrenado en AudioSet, para que cada banda mel corresponda a las mismas frecuencias en Hz que vio en el preentrenamiento. Se conserva una ventana de 25 ms y un salto de 2 ms (≈86 frames por ventana de 2048 muestras); las bandas por encima de 6 kHz (Nyquist de la señal original) quedan prácticamente sin energía. Las CNN siguen trabajando a 12 kHz. Con `ast_fs: 0` se desactiva el remuestreo.
 - El AST conserva sus embeddings posicionales preentrenados mediante interpolación bilineal de 12×101 a 12×9 parches en lugar de reinicializarlos.
 - El DDPM usa EMA con calentamiento (`decay = min(0.999, (1+s)/(10+s))`): sin él, con pocos pasos las muestras degeneran en ruido blanco.
 - La periodicidad del Grad-CAM se mide en la segunda etapa convolucional (375 Hz de muestreo temporal) para poder resolver BPFO ≈ 103 Hz y BPFI ≈ 156 Hz a 1730 rpm.
