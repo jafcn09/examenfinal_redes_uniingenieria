@@ -1,7 +1,8 @@
 data/CWRU/
-results/*
-!results/README.md
-!results/.gitkeep
+# results/: se versiona lo que aparece en el artículo (tablas, figuras, logs, manifest);
+# los pesos y las ventanas sintéticas son pesados y se comparten por enlace (ver README).
+results/weights/
+results/synthetic/
 results_cwru.zip
 __pycache__/
 *.pyc

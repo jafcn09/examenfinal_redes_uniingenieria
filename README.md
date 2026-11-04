@@ -25,7 +25,7 @@ Se comparan tres arquitecturas (CNN 1D tipo WDCNN como línea base, CNN 2D sobre
 ## Cómo funciona: el flujo de extremo a extremo
 
 ```
-                 data/CWRU/*.mat  (44 archivos, 12 kHz, canal Drive-End)
+                 data/CWRU/*.mat  (40 archivos = 10 clases x 4 cargas, canal Drive-End, 12 kHz; Normal remuestreada desde 48 kHz)
                          |
    [1] data   ventanas de 2048 muestras, z-score por ventana
              train: cargas 0,1,2 (80 % temporal de cada señal) + desbalance inducido
@@ -80,7 +80,7 @@ Python ≥ 3.10, PyTorch ≥ 2.2. GPU recomendada (una T4 basta); sin GPU el paq
 
 ### A. Recorrido mínimo en 4 comandos (CPU, perfil `smoke`)
 
-Sirve para ver el proyecto funcionando de principio a fin sin GPU y en minutos. La descarga de datos (≈190 MB) ocurre sola en el primer comando.
+Sirve para ver el proyecto funcionando de principio a fin sin GPU y en minutos. La descarga de datos (carpetas `Normal/` y `12k_Drive_End_Bearing_Fault_Data/` del espejo, ≈190 MB) ocurre sola en el primer comando.
 
 ```bash
 python -m cwru_dl --profile smoke data                                  # descarga + particiones + fig01-02
@@ -95,7 +95,7 @@ Todos los comandos empiezan imprimiendo el hardware detectado:
 device cpu | hardware CPU x8
 ```
 
-`data` imprime dos tablas: el inventario de los 44 archivos (muestras y rpm por clase y carga) y el reparto de ventanas por partición, con esta forma:
+`data` imprime dos tablas: el inventario de los 40 archivos (muestras y rpm por clase y carga) y el reparto de ventanas por partición, con esta forma:
 
 ```
 carga_HP      0      1      2      3        <- muestras por archivo .mat
@@ -292,7 +292,9 @@ examenfinal_redes_uniingenieria/
 ## Semillas y pesos
 
 Semillas fijadas en `configs/base.yaml` (`seeds: [0, 1, 2]`); cada corrida fija NumPy, Python y PyTorch con `seed_all`. Los pesos del mejor estado por (modelo, aumento) para la semilla 0 y el DDPM se guardan en `results/weights/`.
-Enlace a los pesos entrenados: _completar (Drive o Hugging Face)_.
+Enlace a los pesos entrenados (corrida `full` del artículo): **PENDIENTE: pegar aquí el enlace de Google Drive** a la carpeta `results/weights/` y a `results/synthetic/`.
+Para usarlos: descargue `weights/` dentro de `results/` y ejecute `python -m cwru_dl demo --cls OR014 --load 3` o el notebook `notebooks/02_demo_inferencia.ipynb`.
+Las versiones exactas de las dependencias de esa corrida están en `results/requirements-lock.txt`.
 
 ## Decisiones de diseño verificadas
 
